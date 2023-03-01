@@ -1,8 +1,10 @@
 import os
 import openai
+from dotenv.main import load_dotenv
 
 # This definitely should not be stored like this
-openai.api_key = "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"
+load_dotenv()
+openai.api_key = os.environ['OPENAI_API_KEY']
 
 usr_input = input("Hello what are your symptoms? ")
 
