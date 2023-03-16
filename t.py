@@ -9,6 +9,7 @@ import os
 from twilio.rest import Client
 from twilio.base.exceptions import TwilioRestException
 from dotenv import load_dotenv
+import GPTDR
 import time
 
 app = Flask(__name__)
@@ -34,6 +35,7 @@ sid = "ACCOUNT_SID"
 account_sid = os.getenv(sid)
 auth_token = os.getenv(key)
 client = Client(account_sid, auth_token)
+openai_api_key = os.getenv("OPENAI_API_KEY")
 
 """
 phase 1 - user call and initial message
@@ -84,7 +86,7 @@ def record(phone_number):
     resp.say(CALLBACKMESSAGE)
 
     # record the user's response until they press the # key
-    resp.record(max_length=30, finish_on_key='#', transcribe=True,
+    resp.record(finish_on_key='#', transcribe=True,
                 transcribe_callback=request.url_root + 'process/' + phone_number)
 
     # hang up the call
@@ -124,11 +126,15 @@ phase 2 - user text and follow up questions
 def sms(phone_number, user_response):
     print("sms called")
     print(phone_number, user_response)
+
+    gpt_dr = GPTDR.GPTDR(openai_api_key)
+    GPTDRresponse = gpt_dr.create_initial_text(user_response)
+
     # create a new Twilio voice response object
     message = client.messages.create(
         to=phone_number,
         from_=GPTDRPHONENUMBER,
-        body=DEFAULTINTROTEXT
+        body=GPTDRresponse
     )
 
     return str(message)
