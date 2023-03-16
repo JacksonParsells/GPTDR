@@ -3,7 +3,7 @@ twilio.py wraps the twilio API for GPTDR
 """
 
 from twilio.twiml.messaging_response import MessagingResponse
-from twilio.twiml.voice_response import VoiceResponse
+from twilio.twiml.voice_response import VoiceResponse, Dial, Gather
 from flask import Flask, request, redirect
 import os
 from twilio.rest import Client
@@ -18,11 +18,13 @@ load_dotenv('.env')
 DEFAULTINTROTEXT = "Welcome to GPTDR! Thank you for providing initial \
                        information for the diagnosis. To continue on, please \
                        answer a few more questions."
-DEFAULTCALLRESPONSE = "Welcome to GPTDR! Thank you for calling. Following this\
+CALLRESPONSE1 = "Welcome to GPTDR! Thank you for calling. Following this\
                         message, please accept the return call and  provide \
                         a quick description of what your problem is, including \
-                        the area affected, when the issue began, and any symptoms. \
-                        press 1 for return call"
+                        the area affected, when the issue began, and any symptoms."
+CALLBACKMESSAGE = "Please describe your problem, including the area affected, \
+                        when the issue began, and any symptoms after the beep. \
+                            Press the pound key when you are finished."
 TESTSUBCRIBEDNUMBER = '+13025841779'
 GPTDRPHONENUMBER = '+18885143317'
 
@@ -38,85 +40,98 @@ phase 1 - user call and initial message
 """
 
 
-@app.route("/answer", methods=['GET', 'POST'])
-def answer():
-    """Respond to incoming phone calls with a message."""
-    # Start our TwiML response
+@app.route('/call', methods=['GET', 'POST'])
+def call():
+    # create a new Twilio voice response object
     resp = VoiceResponse()
 
-    caller = request.values.get('From')
-    twilio_number = request.values.get('To')
+    # get the user's phone number
+    user_phone_number = request.values.get('From')
 
-    with resp.gather(numDigits=1, action='/call-back', method='POST') as gather:
-        gather.say(DEFAULTCALLRESPONSE, voice='alice')
+    # ask the user to press any key to continue, call the connect function with
+    # the user's phone number as a parameter
+    gather = Gather(num_digits=1,
+                    action=request.url_root + 'connect/' + user_phone_number,
+                    method='POST')
+    gather.say(CALLRESPONSE1)
+    resp.append(gather)
 
-    send_sms(caller, twilio_number)
-
+    # return the Twilio voice response to the user
     return str(resp)
 
 
-@app.route("/call-back", methods=['GET', 'POST'])
-def call_back():
-    """returns a call (for cost reasons) and records user description"""
+@app.route('/connect/<phone_number>', methods=['GET', 'POST'])
+def connect(phone_number):
+    # create a new Twilio voice response object
     resp = VoiceResponse()
-    resp.say('Hello. Please describe your problem after the beep.')
-    resp.record()
+
     call = client.calls.create(
-        record=True,
-        to=TESTSUBCRIBEDNUMBER,
-        twiml=resp,
-        from_=GPTDRPHONENUMBER
+        to=phone_number,  # the user's phone number
+        from_=GPTDRPHONENUMBER,  # your Twilio phone number
+        url=request.url_root + 'record/' + phone_number
     )
 
-    # response = VoiceResponse()
+    # return the Twilio voice response to Twilio
+    return str(resp)
 
-    # Use <Record> to record the caller's message
 
-    # time.sleep(10)
-    # End the call with <Hangup>
+@app.route('/record/<phone_number>', methods=['GET', 'POST'])
+def record(phone_number):
+    # create a new Twilio voice response object
+    resp = VoiceResponse()
+
+    # add a message that will be played to the user
+    resp.say(CALLBACKMESSAGE)
+
+    # record the user's response until they press the # key
+    resp.record(max_length=30, finish_on_key='#', transcribe=True,
+                transcribe_callback=request.url_root + 'process/' + phone_number)
+
+    # hang up the call
     resp.hangup()
-    print(resp.xml)
+
+    # return the Twilio voice response to Twilio
     return str(resp)
 
 
-def send_sms(to_number, from_number):
-    """Using our caller's number and the number they called, send an SMS."""
-    print('sending sms')
-    print(to_number, from_number)
-    try:
-        client.messages.create(
-            body=DEFAULTINTROTEXT,
-            from_=from_number,
-            to=to_number
-        )
-        print('sent')
-    except TwilioRestException as exception:
-        print(exception.code)
-        # Check for invalid mobile number error from Twilio
-        if exception.code == 21614:
-            print("Uh oh, looks like this caller can't receive SMS messages.")
+@app.route('/process/<phone_number>', methods=['GET', 'POST'])
+def process(phone_number):
+    # create a new Twilio voice response object
+    resp = VoiceResponse()
 
+    # get the transcription of the recording from the request
+    user_response = request.values.get('TranscriptionText')
 
-"""
-SMS functions
-"""
+    # add a message that will be played to the user
+    resp.say("Thank you for your response. We will contact you shortly.")
 
+    # hang up the call
+    resp.hangup()
 
-@app.route("/sms", methods=['GET', 'POST'])
-def incoming_sms():
-    """Send a dynamic reply to an incoming text message"""
-    # Get the message the user sent our Twilio number
-    body = request.values.get('Body', None)
+    # call the sms function with the user's phone number as a parameter
+    sms(phone_number, user_response)
 
-    # Start our TwiML response
-    resp = MessagingResponse()
-    print('received message')
-
-    # Determine the right reply for this message
-    resp.message("we received the message: " + str(body) +
-                 ". Thanks you for providing more information! This will be filled in with GPT data once this is combined with Sam's wok")
-
+    # return the Twilio voice response to Twilio
     return str(resp)
+
+
+"""
+phase 2 - user text and follow up questions
+"""
+
+
+@app.route('/sms/<phone_number><user_response>', methods=['GET', 'POST'])
+def sms(phone_number, user_response):
+    print("sms called")
+    print(phone_number, user_response)
+    # create a new Twilio voice response object
+    message = client.messages.create(
+        to=phone_number,
+        from_=GPTDRPHONENUMBER,
+        body=DEFAULTINTROTEXT
+    )
+
+    return str(message)
 
 
 if __name__ == "__main__":
