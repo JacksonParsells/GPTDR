@@ -28,6 +28,7 @@ class GPTDR:
         return ans.choices[0].text
 
     def create_followup_text(self, user_input):
+        # TODO: add the repeated followups
         moreFollowups = True
         response = self.openai_instance.Completion.create(
             model="text-davinci-003",
