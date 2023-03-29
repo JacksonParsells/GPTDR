@@ -25,7 +25,7 @@ class GPTDR:
             messages=messages
         )
 
-        return ans.choices[0].text
+        return ans.choices[0].message.content
 
     def create_followup_text(self, user_input):
         # TODO: add the repeated followups
