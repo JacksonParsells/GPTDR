@@ -22,7 +22,8 @@ DEFAULTINTROTEXT = "Welcome to GPTDR! Thank you for providing initial \
 CALLRESPONSE1 = "Welcome to GPTDR! Thank you for calling. Following this\
                         message, please accept the return call and  provide \
                         a quick description of what your problem is, including \
-                        the area affected, when the issue began, and any symptoms."
+                        the area affected, when the issue began, and any symptoms.\
+                        Press 1 when ready!"
 CALLBACKMESSAGE = "Please describe your problem, including the area affected, \
                         when the issue began, and any symptoms after the beep. \
                             Press the pound key when you are finished."
