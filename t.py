@@ -37,6 +37,7 @@ account_sid = os.getenv(sid)
 auth_token = os.getenv(key)
 client = Client(account_sid, auth_token)
 openai_api_key = os.getenv("OPENAI_API_KEY")
+gpt_dr = GPTDR.GPTDR(openai_api_key)
 
 """
 phase 1 - user call and initial message
@@ -112,7 +113,7 @@ def process(phone_number):
     resp.hangup()
 
     # call the sms function with the user's phone number as a parameter
-    sms(phone_number, user_response)
+    send_initial_text(phone_number, user_response)
 
     # return the Twilio voice response to Twilio
     return str(resp)
@@ -123,12 +124,7 @@ phase 2 - user text and follow up questions
 """
 
 
-@app.route('/sms/<phone_number><user_response>', methods=['GET', 'POST'])
-def sms(phone_number, user_response):
-    print("sms called")
-    print(phone_number, user_response)
-
-    gpt_dr = GPTDR.GPTDR(openai_api_key)
+def send_initial_text(phone_number, user_response):
     GPTDRresponse = gpt_dr.create_initial_text(user_response)
 
     # create a new Twilio voice response object
@@ -139,6 +135,25 @@ def sms(phone_number, user_response):
     )
 
     return str(message)
+
+
+@app.route('/sms', methods=['GET', 'POST'])
+def sms():
+    # create a new Twilio messaging response object
+    resp = MessagingResponse()
+
+    # get the user's phone number and message
+    user_phone_number = request.values.get('From')
+    user_message = request.values.get('Body')
+
+    # create a GPTDR instance and create a follow-up question
+    follow_up_question = gpt_dr.create_followup_text(user_message)
+
+    # add the follow-up question to the Twilio messaging response object
+    resp.message(follow_up_question)
+
+    # send the Twilio messaging response object to the user
+    return str(resp)
 
 
 if __name__ == "__main__":
