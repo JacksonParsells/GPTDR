@@ -22,7 +22,8 @@ DEFAULTINTROTEXT = "Welcome to GPTDR! Thank you for providing initial \
 CALLRESPONSE1 = "Welcome to GPTDR! Thank you for calling. Following this\
                         message, please accept the return call and  provide \
                         a quick description of what your problem is, including \
-                        the area affected, when the issue began, and any symptoms."
+                        the area affected, when the issue began, and any symptoms.\
+                        Press 1 when ready!"
 CALLBACKMESSAGE = "Please describe your problem, including the area affected, \
                         when the issue began, and any symptoms after the beep. \
                             Press the pound key when you are finished."
@@ -36,6 +37,7 @@ account_sid = os.getenv(sid)
 auth_token = os.getenv(key)
 client = Client(account_sid, auth_token)
 openai_api_key = os.getenv("OPENAI_API_KEY")
+gpt_dr = GPTDR.GPTDR(openai_api_key)
 
 """
 phase 1 - user call and initial message
@@ -50,13 +52,15 @@ def call():
     # get the user's phone number
     user_phone_number = request.values.get('From')
 
-    # ask the user to press any key to continue, call the connect function with
-    # the user's phone number as a parameter
-    gather = Gather(num_digits=1,
-                    action=request.url_root + 'connect/' + user_phone_number,
-                    method='POST')
-    gather.say(CALLRESPONSE1)
-    resp.append(gather)
+    # # ask the user to press any key to continue, call the connect function with
+    # # the user's phone number as a parameter
+    # gather = Gather(num_digits=1,
+    #                 action=request.url_root + 'connect/' + user_phone_number,
+    #                 method='POST')
+    # gather.say(CALLRESPONSE1)
+    # resp.append(gather)
+    print(resp)
+    resp.say(CALLRESPONSE1)
 
     # return the Twilio voice response to the user
     return str(resp)
@@ -111,7 +115,7 @@ def process(phone_number):
     resp.hangup()
 
     # call the sms function with the user's phone number as a parameter
-    sms(phone_number, user_response)
+    send_initial_text(phone_number, user_response)
 
     # return the Twilio voice response to Twilio
     return str(resp)
@@ -122,12 +126,7 @@ phase 2 - user text and follow up questions
 """
 
 
-@app.route('/sms/<phone_number><user_response>', methods=['GET', 'POST'])
-def sms(phone_number, user_response):
-    print("sms called")
-    print(phone_number, user_response)
-
-    gpt_dr = GPTDR.GPTDR(openai_api_key)
+def send_initial_text(phone_number, user_response):
     GPTDRresponse = gpt_dr.create_initial_text(user_response)
 
     # create a new Twilio voice response object
@@ -140,5 +139,24 @@ def sms(phone_number, user_response):
     return str(message)
 
 
+@app.route('/sms', methods=['GET', 'POST'])
+def sms():
+    # create a new Twilio messaging response object
+    resp = MessagingResponse()
+
+    # get the user's phone number and message
+    user_phone_number = request.values.get('From')
+    user_message = request.values.get('Body')
+
+    # create a GPTDR instance and create a follow-up question
+    follow_up_question = gpt_dr.create_followup_text(user_message)
+
+    # add the follow-up question to the Twilio messaging response object
+    resp.message(follow_up_question)
+
+    # send the Twilio messaging response object to the user
+    return str(resp)
+
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=5002)
