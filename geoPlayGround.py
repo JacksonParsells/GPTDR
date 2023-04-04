@@ -36,40 +36,38 @@ def haversine(lat1, lon1, lat2, lon2):
     d = R * c # Distance in km
     return d
 
-locations = []
-for index, row in df.iterrows():
-    locations.append(row.tolist())
-# print(locations)
+def geoLocation(address):
+    url = f"https://maps.googleapis.com/maps/api/geocode/json?address={address}&key=AIzaSyCfuq3GcxyeMVrF0kp3YePV-WnkB_R_u0s"
+    response = requests.get(url)
+    data = response.json()
+    location = data["results"][0]["geometry"]["location"]
+    return location
+# param: a string of location
+# 
+def nearestClinic(geoName):
+    start_location_dict = geoLocation(geoName)
+    start_location = (start_location_dict['lat'], start_location_dict['lng'])
+    locations = []
+    for index, row in df.iterrows():
+        locations.append(row.tolist())
+    distances = []
 
-# Define the starting location
-# start_location = (42.3355488, -71.1684945) # Boston College
-start_location = (9.08164, 7.52515) # Catholic University of Angola
+    for location in locations:
+        distance = haversine(start_location[0], start_location[1], location[2], location[3])
+        distances.append(distance)
+    index_of_closest_location = distances.index(min(distances))
+    end_location = str (locations[index_of_closest_location][1])
+    closest = "Closest location: " + str (locations[index_of_closest_location][1]) + ", " + str(round(distances[index_of_closest_location],2)) + "km away."
+    print(closest)
+    mode="driving"
+    directions_result = gmaps.directions(start_location, end_location, mode="driving")
+    
+    guide = ""
+    for step in directions_result[0]['legs'][0]['steps']:
+        instructions = step['html_instructions']
+        instructions = re.sub("<.*?>", "", instructions)
+        guide += instructions + "\n"
+    print(guide)
 
-distances = []
-for location in locations:
-    distance = haversine(start_location[0], start_location[1], location[2], location[3])
-    distances.append(distance)
-
-index_of_closest_location = distances.index(min(distances))
-
-end_location = str (locations[index_of_closest_location][1])
-mode="driving"
-
-directions_result = gmaps.directions(start_location, end_location, mode="driving")
-print("Closest location: " + str (locations[index_of_closest_location][1]) + 
-      ", " + str(round(distances[index_of_closest_location],2)) + "km away.")
-
-for step in directions_result[0]['legs'][0]['steps']:
-    instructions = step['html_instructions']
-    instructions = re.sub("<.*?>", "", instructions)
-    print(instructions)
-
-# url = f"https://maps.googleapis.com/maps/api/directions/json?origin={start_location}&destination={end_location}&mode={mode}&key={api_key}"
-# response = requests.get(url)
-# data = response.json()
-
-# for leg in data["routes"][0]["legs"]:
-#     for step in leg["steps"]:
-#         instructions = step["html_instructions"]
-#         instructions = re.sub("<.*?>", "", instructions)
-#         print(instructions)
+#TODO: 
+nearestClinic("National Childrens Park and Zoo Abuja")
