@@ -52,13 +52,15 @@ def call():
     # get the user's phone number
     user_phone_number = request.values.get('From')
 
-    # ask the user to press any key to continue, call the connect function with
-    # the user's phone number as a parameter
-    gather = Gather(num_digits=1,
-                    action=request.url_root + 'connect/' + user_phone_number,
-                    method='POST')
-    gather.say(CALLRESPONSE1)
-    resp.append(gather)
+    # # ask the user to press any key to continue, call the connect function with
+    # # the user's phone number as a parameter
+    # gather = Gather(num_digits=1,
+    #                 action=request.url_root + 'connect/' + user_phone_number,
+    #                 method='POST')
+    # gather.say(CALLRESPONSE1)
+    # resp.append(gather)
+    print(resp)
+    resp.say(CALLRESPONSE1)
 
     # return the Twilio voice response to the user
     return str(resp)
