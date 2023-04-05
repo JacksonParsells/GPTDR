@@ -26,7 +26,12 @@ CALLRESPONSE1 = "Welcome to GPTDR! Thank you for calling. Following this\
                         Press 1 when ready!"
 CALLBACKMESSAGE = "Please describe your problem, including the area affected, \
                         when the issue began, and any symptoms after the beep. \
-                            Press the pound key when you are finished."
+                        Press the pound key when you are finished.\
+                        We will send you a text message with follow up \
+                        questions. Once you answer those questions, we will \
+                        send you a diagnosis and recommendations via text. \
+                        Note that G P T D R is not a medical professional and \
+                        is not liable for any advice or information it provides."
 TESTSUBCRIBEDNUMBER = '+13025841779'
 GPTDRPHONENUMBER = '+18885143317'
 
