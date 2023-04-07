@@ -19,14 +19,9 @@ load_dotenv('.env')
 DEFAULTINTROTEXT = "Welcome to GPTDR! Thank you for providing initial \
                        information for the diagnosis. To continue on, please \
                        answer a few more questions."
-CALLRESPONSE1 = "Welcome to GPTDR! Thank you for calling. Following this\
-                        message, please accept the return call and  provide \
-                        a quick description of what your problem is, including \
-                        the area affected, when the issue began, and any symptoms.\
-                        Press 1 when ready!"
 CALLBACKMESSAGE = "Please describe your problem, including the area affected, \
                         when the issue began, and any symptoms after the beep. \
-                        Press the pound key when you are finished.\
+                        Hang up when you are finished.\
                         We will send you a text message with follow up \
                         questions. Once you answer those questions, we will \
                         send you a diagnosis and recommendations via text. \
@@ -62,7 +57,7 @@ def call():
     gather = Gather(num_digits=1,
                     action=request.url_root + 'connect/' + user_phone_number,
                     method='POST')
-    gather.say(CALLRESPONSE1)
+    gather.say("press 1 for return call")
     resp.append(gather)
 
     # return the Twilio voice response to the user
@@ -92,9 +87,11 @@ def record(phone_number):
     # add a message that will be played to the user
     resp.say(CALLBACKMESSAGE)
 
-    # record the user's response until they press the # key
-    resp.record(finish_on_key='#', transcribe=True,
-                transcribe_callback=request.url_root + 'process/' + phone_number)
+    # record the user's response until they hang up
+    resp.record(transcribe=True, transcribe_callback=request.url_root +
+                'process/' + phone_number)
+    # resp.record(finish_on_key='#', transcribe=True,
+    #             transcribe_callback=request.url_root + 'process/' + phone_number)
 
     # hang up the call
     resp.hangup()
