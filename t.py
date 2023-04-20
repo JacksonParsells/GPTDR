@@ -116,9 +116,7 @@ def process(phone_number):
     resp.hangup()
 
     # call the sms function with the user's phone number as a parameter
-    print("Before call to send_initial_test")
     send_initial_text(phone_number, user_response)
-    print("After call to send_initial_test")
 
     # return the Twilio voice response to Twilio
     return str(resp)
@@ -131,7 +129,6 @@ phase 2 - user text and follow up questions
 
 def send_initial_text(phone_number, user_response):
     GPTDRresponse = gpt_dr.create_initial_text(user_response)
-    print("After assignment to SPTDRresponse")
 
     # create a new Twilio voice response object
     message = client.messages.create(
@@ -145,7 +142,6 @@ def send_initial_text(phone_number, user_response):
 
 @app.route('/sms', methods=['GET', 'POST'])
 def sms():
-    print('beginning of function')
     # create a new Twilio messaging response object
     resp = MessagingResponse()
 
@@ -154,15 +150,11 @@ def sms():
     user_message = request.values.get('Body')
 
     # create a GPTDR instance and create a follow-up question
-    print('before followup question')
     follow_up_question = gpt_dr.create_followup_text(user_message)
-    # follow_up_question = 'example response'
-    print('after followup question')
 
     # add the follow-up question to the Twilio messaging response object
     resp.message(follow_up_question)
 
-    print("Followup messa", str(resp))
 
     # send the Twilio messaging response object to the user
     # return str(resp)

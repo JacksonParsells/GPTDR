@@ -48,9 +48,9 @@ class GPTDR:
             messages=temp_messages
         )
 
-        if 'yes' in ans.choices[0].message.content or self.num_runs > 3:
+        if 'yes' in ans.choices[0].message.content or self.num_runs > 2:
             self.messages.append({"role": "user", "content": user_input +
-                                 "What is your diagnosis, and how do you recommend treating it?"})
+                                 "What is your diagnosis, and how do you recommend treating it? Do not include any followup questions here."})
         else:
             self.messages.append(
                 {"role": "user", "content": user_input + "What followup \
