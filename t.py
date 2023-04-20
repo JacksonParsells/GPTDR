@@ -28,6 +28,7 @@ CALLBACKMESSAGE = "Please describe your problem, including the area affected, \
                         send you a diagnosis and recommendations via text. \
                         Note that G P T D R is not a medical professional and \
                         is not liable for any advice or information it provides."
+CALLBACKMESSAGE = "Symptoms now"
 TESTSUBCRIBEDNUMBER = '+13025841779'
 GPTDRPHONENUMBER = '+18885143317'
 
@@ -142,18 +143,42 @@ def send_initial_text(phone_number, user_response):
 
 @app.route('/sms', methods=['GET', 'POST'])
 def sms():
-    # create a new Twilio messaging response object
-    resp = MessagingResponse()
-
-    # get the user's message
+    # resp = MessagingResponse()
+    resp = ""
     user_number = request.values.get('From')
     user_message = request.values.get('Body')
+    if not gpt_dr.delivered_diagnosis:
+        print('in not deliver diag')
+        # create a new Twilio messaging response object
 
-    # create a GPTDR instance and create a follow-up question
-    follow_up_question = gpt_dr.create_followup_text(user_message)
+        # get the user's message
 
-    # add the follow-up question to the Twilio messaging response object
-    resp.message(follow_up_question)
+        # create a GPTDR instance and create a follow-up question
+        follow_up_question = gpt_dr.create_followup_text(user_message)
+        print('follow_up_question is ' + follow_up_question)
+
+        # add the follow-up question to the Twilio messaging response object
+        if not gpt_dr.delivered_diagnosis:
+            resp += follow_up_question
+            print("IN NOT DELIVERED DIAG")
+        else:
+            print("resp pre:", resp)
+            resp = follow_up_question
+            resp += " Would you like to see the nearest local medical facility? Respond yes or no."
+            print("resp post:", resp)
+            print("IN DELIVERED DIAG SHOULD HAVE ADDED MED FECILITY")
+    elif gpt_dr.location_pending:
+            print('in location pending')
+            location_response = gpt_dr.nearest_clinic(request.values.get('Body'))
+            resp += location_response
+    else:
+        print('in else case')
+        if request.values.get('Body').lower() == "yes":
+            gpt_dr.location_pending = True
+            resp += "Great! Please send the name the name of the town or city that you're in."
+        else:
+            resp += "It looks like you either said no or entered a command I don't recognize. Bye!"
+
 
 
     # send the Twilio messaging response object to the user
@@ -167,15 +192,17 @@ def sms():
     # --data-urlencode follow_up_question \
     # -u account_sid:auth_token
 
-    # account_creds = '-u ' + account_sid + ':' + auth_token
-    # os.system("curl 'https://api.twilio.com/2010-04-01/Accounts/AC51cd81e721fd58f313cfcc3738677592/Messages.json' -X POST \
-    # --data-urlencode 'To=" + user_number + "' \
-    # --data-urlencode 'From=+18885143317' \
-    # --data-urlencode 'MessagingServiceSid=MG9638393c09012bcb7bb4d24c31e3af01' \
-    # --data-urlencode 'Body=" + follow_up_question + "' \
-    # " + account_creds)
+    print("RESP:", resp)
 
-    return str(resp)
+    account_creds = '-u ' + account_sid + ':' + auth_token
+    os.system("curl 'https://api.twilio.com/2010-04-01/Accounts/AC51cd81e721fd58f313cfcc3738677592/Messages.json' -X POST \
+    --data-urlencode 'To=" + user_number + "' \
+    --data-urlencode 'From=+18885143317' \
+    --data-urlencode 'MessagingServiceSid=MG9638393c09012bcb7bb4d24c31e3af01' \
+    --data-urlencode 'Body=" + resp.replace("'", "`") + "' \
+    " + account_creds)
+
+    return ""
 
 
 if __name__ == "__main__":

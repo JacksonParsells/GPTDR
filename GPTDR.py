@@ -15,23 +15,27 @@ class GPTDR:
                           them figure out their medical issue."},
                          {"role": "user", "content": "I am your patient and you are my doctor.\
                             unfortunately I'm unable to see a doctor in person, so you are going\
-                            to need to help me diagnose my symptoms as best you can."},
+                            to need to help me diagnose my ailment as best you can."},
                          {"role": "assistant", "content": "What symptoms are you experiencing?"}]
+        self.delivered_diagnosis = False
+        self.location_pending = False
+
 
     def create_initial_text(self, user_input):
         self.messages.append({"role": "user", "content": user_input + "What followup questions do you have?\
-          Please format questions as a list with multiple choice options."})
+          Please format questions as a list with multiple choice options a. through d.\
+          and limit the number of questions to 4."})
 
         ans = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=self.messages
         )
 
-        while not "a." in ans.choices[0].message.content:
-            ans = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
-                messages=self.messages
-            )
+        # while not "a." in ans.choices[0].message.content:
+        # ans = openai.ChatCompletion.create(
+        #     model="gpt-3.5-turbo",
+        #     messages=self.messages
+        # )
 
         self.num_runs += 1
         self.messages.append(
@@ -48,9 +52,10 @@ class GPTDR:
             messages=temp_messages
         )
 
-        if 'yes' in ans.choices[0].message.content or self.num_runs > 2:
+        if 'yes' in ans.choices[0].message.content or self.num_runs > 0:
             self.messages.append({"role": "user", "content": user_input +
                                  "What is your diagnosis, and how do you recommend treating it? Do not include any followup questions here."})
+            self.delivered_diagnosis = True
         else:
             self.messages.append(
                 {"role": "user", "content": user_input + "What followup \
@@ -64,11 +69,11 @@ class GPTDR:
             messages=self.messages
         )
 
-        while not "a." in ans.choices[0].message.content:
-            ans = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
-                messages=self.messages
-            )
+        # while not "a." in ans.choices[0].message.content:
+        # ans = openai.ChatCompletion.create(
+        #     model="gpt-3.5-turbo",
+        #     messages=self.messages
+        #     )
 
         self.num_runs += 1
         self.messages.append(
