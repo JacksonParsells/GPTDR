@@ -29,11 +29,9 @@ class GPTDR:
 
         while not "a." in ans.choices[0].message.content:
             ans = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=self.messages
-        )
-
-
+                model="gpt-3.5-turbo",
+                messages=self.messages
+            )
 
         self.num_runs += 1
         self.messages.append(
@@ -42,45 +40,38 @@ class GPTDR:
         return ans.choices[0].message.content
 
     def create_followup_text(self, user_input):
-        temp_messages = self.messages + [{"role": "user", "content": user_input + "Are you prepared to make a diagnosis? If so, say yes. If not, say no."}]
-        
+        temp_messages = self.messages + [{"role": "user", "content": user_input +
+                                          "Are you prepared to make a diagnosis? If so, say yes. If not, say no."}]
+
         ans = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=temp_messages
         )
 
         if 'yes' in ans.choices[0].message.content or self.num_runs > 3:
-            self.messages.append({"role": "user", "content": user_input + "What is your diagnosis, and how do you recommend treating it?"})
+            self.messages.append({"role": "user", "content": user_input +
+                                 "What is your diagnosis, and how do you recommend treating it?"})
         else:
             self.messages.append(
                 {"role": "user", "content": user_input + "What followup \
                  questions do you have to figure out what the issue is? \
                  Remember that I don't have ready access to a doctor right now. \
-                Please format questions as a list with multiple choice options \
+                 Please format questions as a list with multiple choice options a. through d.\
                  and limit the number of questions to 4."})
 
         ans = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=self.messages
         )
-        
+
         while not "a." in ans.choices[0].message.content:
             ans = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=self.messages
-        )
-            
+                model="gpt-3.5-turbo",
+                messages=self.messages
+            )
+
         self.num_runs += 1
         self.messages.append(
             {"role": "assistant", "content": ans.choices[0].message.content})
 
         return ans.choices[0].message.content
-
-
-openai_api_key = os.getenv("OPENAI_API_KEY")
-
-gpt_dr = GPTDR(openai_api_key)
-
-# print(gpt_dr.create_initial_text("I have a headache"))
-# print(gpt_dr.create_followup_text("I have a headache"))
-# commenting out test code for annoyance when restarting
