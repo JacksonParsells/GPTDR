@@ -2,7 +2,7 @@
 twilio.py wraps the twilio API for GPTDR
 """
 
-from twilio.twiml.messaging_response import MessagingResponse
+from twilio.twiml.messaging_response import MessagingResponse, Message
 from twilio.twiml.voice_response import VoiceResponse, Dial, Gather
 from flask import Flask, request, redirect
 import os
@@ -10,6 +10,7 @@ from twilio.rest import Client
 from twilio.base.exceptions import TwilioRestException
 from dotenv import load_dotenv
 import GPTDR
+import os
 import time
 
 app = Flask(__name__)
@@ -19,14 +20,14 @@ load_dotenv('.env')
 DEFAULTINTROTEXT = "Welcome to GPTDR! Thank you for providing initial \
                        information for the diagnosis. To continue on, please \
                        answer a few more questions."
-CALLRESPONSE1 = "Welcome to GPTDR! Thank you for calling. Following this\
-                        message, please accept the return call and  provide \
-                        a quick description of what your problem is, including \
-                        the area affected, when the issue began, and any symptoms.\
-                        Press 1 when ready!"
 CALLBACKMESSAGE = "Please describe your problem, including the area affected, \
                         when the issue began, and any symptoms after the beep. \
-                            Press the pound key when you are finished."
+                        Hang up when you are finished.\
+                        We will send you a text message with follow up \
+                        questions. Once you answer those questions, we will \
+                        send you a diagnosis and recommendations via text. \
+                        Note that G P T D R is not a medical professional and \
+                        is not liable for any advice or information it provides."
 TESTSUBCRIBEDNUMBER = '+13025841779'
 GPTDRPHONENUMBER = '+18885143317'
 
@@ -52,15 +53,13 @@ def call():
     # get the user's phone number
     user_phone_number = request.values.get('From')
 
-    # # ask the user to press any key to continue, call the connect function with
-    # # the user's phone number as a parameter
-    # gather = Gather(num_digits=1,
-    #                 action=request.url_root + 'connect/' + user_phone_number,
-    #                 method='POST')
-    # gather.say(CALLRESPONSE1)
-    # resp.append(gather)
-    print(resp)
-    resp.say(CALLRESPONSE1)
+    # ask the user to press any key to continue, call the connect function with
+    # the user's phone number as a parameter
+    gather = Gather(num_digits=1,
+                    action=request.url_root + 'connect/' + user_phone_number,
+                    method='POST')
+    gather.say("press 1 for return call")
+    resp.append(gather)
 
     # return the Twilio voice response to the user
     return str(resp)
@@ -89,9 +88,11 @@ def record(phone_number):
     # add a message that will be played to the user
     resp.say(CALLBACKMESSAGE)
 
-    # record the user's response until they press the # key
-    resp.record(finish_on_key='#', transcribe=True,
-                transcribe_callback=request.url_root + 'process/' + phone_number)
+    # record the user's response until they hang up
+    resp.record(transcribe=True, transcribe_callback=request.url_root +
+                'process/' + phone_number)
+    # resp.record(finish_on_key='#', transcribe=True,
+    #             transcribe_callback=request.url_root + 'process/' + phone_number)
 
     # hang up the call
     resp.hangup()
@@ -115,7 +116,9 @@ def process(phone_number):
     resp.hangup()
 
     # call the sms function with the user's phone number as a parameter
+    print("Before call to send_initial_test")
     send_initial_text(phone_number, user_response)
+    print("After call to send_initial_test")
 
     # return the Twilio voice response to Twilio
     return str(resp)
@@ -128,6 +131,7 @@ phase 2 - user text and follow up questions
 
 def send_initial_text(phone_number, user_response):
     GPTDRresponse = gpt_dr.create_initial_text(user_response)
+    print("After assignment to SPTDRresponse")
 
     # create a new Twilio voice response object
     message = client.messages.create(
@@ -141,20 +145,44 @@ def send_initial_text(phone_number, user_response):
 
 @app.route('/sms', methods=['GET', 'POST'])
 def sms():
+    print('beginning of function')
     # create a new Twilio messaging response object
     resp = MessagingResponse()
 
-    # get the user's phone number and message
-    user_phone_number = request.values.get('From')
+    # get the user's message
+    user_number = request.values.get('From')
     user_message = request.values.get('Body')
 
     # create a GPTDR instance and create a follow-up question
+    print('before followup question')
     follow_up_question = gpt_dr.create_followup_text(user_message)
+    # follow_up_question = 'example response'
+    print('after followup question')
 
     # add the follow-up question to the Twilio messaging response object
     resp.message(follow_up_question)
 
+    print("Followup messa", str(resp))
+
     # send the Twilio messaging response object to the user
+    # return str(resp)
+
+    # use os to send message using curl:
+    #     curl 'https://api.twilio.com/2010-04-01/Accounts/AC51cd81e721fd58f313cfcc3738677592/Messages.json' -X POST \
+    # --data-urlencode 'To=user_number \
+    # --data-urlencode 'From=+18885143317' \
+    # --data-urlencode 'MessagingServiceSid=MG9638393c09012bcb7bb4d24c31e3af01' \
+    # --data-urlencode follow_up_question \
+    # -u account_sid:auth_token
+
+    # account_creds = '-u ' + account_sid + ':' + auth_token
+    # os.system("curl 'https://api.twilio.com/2010-04-01/Accounts/AC51cd81e721fd58f313cfcc3738677592/Messages.json' -X POST \
+    # --data-urlencode 'To=" + user_number + "' \
+    # --data-urlencode 'From=+18885143317' \
+    # --data-urlencode 'MessagingServiceSid=MG9638393c09012bcb7bb4d24c31e3af01' \
+    # --data-urlencode 'Body=" + follow_up_question + "' \
+    # " + account_creds)
+
     return str(resp)
 
 
