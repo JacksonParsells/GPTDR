@@ -36,6 +36,9 @@ def haversine(lat1, lon1, lat2, lon2):
     d = R * c # Distance in km
     return d
 
+start_location = ""
+end_location = ""
+
 def geoLocation(address):
     url = f"https://maps.googleapis.com/maps/api/geocode/json?address={address}&key=AIzaSyCfuq3GcxyeMVrF0kp3YePV-WnkB_R_u0s"
     response = requests.get(url)
@@ -57,8 +60,8 @@ def nearestClinic(geoName):
         distances.append(distance)
     index_of_closest_location = distances.index(min(distances))
     end_location = str (locations[index_of_closest_location][1])
-    closest = "Closest location: " + str (locations[index_of_closest_location][1]) + ", " + str(round(distances[index_of_closest_location],2)) + "km away."
-    print(closest)
+    closest =  str (locations[index_of_closest_location][1]) + ", " + str(round(distances[index_of_closest_location],2)) + "km away."
+    # print(closest)
     mode="driving"
     directions_result = gmaps.directions(start_location, end_location, mode="driving")
     
@@ -67,7 +70,14 @@ def nearestClinic(geoName):
         instructions = step['html_instructions']
         instructions = re.sub("<.*?>", "", instructions)
         guide += instructions + "\n"
-    print(guide)
+    # print(guide)
+    route_pair = {closest:guide}
+    # for key, value in route_pair.items():
+    #     print(key, ":", value)
+    key = next(iter(route_pair.keys()))
+    value = next(iter(route_pair.values()))
+    print("Key:", key)
+    print("Value:", value)
+    return route_pair
 
-#TODO: 
 nearestClinic("National Childrens Park and Zoo Abuja")
