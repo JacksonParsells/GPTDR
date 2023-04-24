@@ -27,6 +27,7 @@ class GPTDR:
                          {"role": "assistant", "content": "What symptoms are you experiencing?"}]
         self.delivered_diagnosis = False
         self.location_pending = False
+        self.df = self.create_df()
         
 
     def create_initial_text(self, user_input):
@@ -89,7 +90,7 @@ class GPTDR:
 
         return ans.choices[0].message.content
 
-    def create_df():
+    def create_df(self):
         # Read JSON file into Python object
         with open('hospitals.json') as f:
             data = json.load(f)
@@ -106,8 +107,6 @@ class GPTDR:
 
         return df
     
-    # class variable df
-    df = create_df()
 
     def haversine(lat1, lon1, lat2, lon2):
         R = 6371 # Radius of the earth in km

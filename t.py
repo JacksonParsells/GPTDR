@@ -170,7 +170,7 @@ def sms():
             print("IN DELIVERED DIAG SHOULD HAVE ADDED MED FECILITY")
     elif gpt_dr.location_pending:
             print('in location pending')
-            location_response = gpt_dr.nearest_clinic(request.values.get('Body'))
+            location_response = gpt_dr.nearestClinic(request.values.get('Body'))
             resp += location_response
     else:
         print('in else case')
@@ -207,4 +207,4 @@ def sms():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5002)
