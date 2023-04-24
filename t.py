@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 import GPTDR
 import os
 import time
+import pandas as pd
 
 app = Flask(__name__)
 load_dotenv('.env')
@@ -206,4 +207,4 @@ def sms():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5002)
+    app.run(debug=True, port=5000)

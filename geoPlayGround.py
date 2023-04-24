@@ -5,8 +5,8 @@ import math
 import pandas as pd
 import json
 import googlemaps
-api_key = 'AIzaSyCfuq3GcxyeMVrF0kp3YePV-WnkB_R_u0s'
-gmaps = googlemaps.Client(key=api_key)
+google_api_key = 'AIzaSyCfuq3GcxyeMVrF0kp3YePV-WnkB_R_u0s'
+gmaps = googlemaps.Client(key=google_api_key)
 
 # Read JSON file into Python object
 with open('hospitals.json') as f:

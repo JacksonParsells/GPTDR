@@ -1,8 +1,16 @@
 import os
 import openai
 from dotenv import load_dotenv
-
 load_dotenv('.env')
+
+import math
+import googlemaps
+import json
+import requests
+import re
+import pandas as pd
+google_api_key = os.getenv("GOOGLE_API_KEY")
+gmaps = googlemaps.Client(key=google_api_key)
 
 
 class GPTDR:
@@ -19,7 +27,7 @@ class GPTDR:
                          {"role": "assistant", "content": "What symptoms are you experiencing?"}]
         self.delivered_diagnosis = False
         self.location_pending = False
-
+        
 
     def create_initial_text(self, user_input):
         self.messages.append({"role": "user", "content": user_input + "What followup questions do you have?\
@@ -80,3 +88,71 @@ class GPTDR:
             {"role": "assistant", "content": ans.choices[0].message.content})
 
         return ans.choices[0].message.content
+
+    def create_df():
+        # Read JSON file into Python object
+        with open('hospitals.json') as f:
+            data = json.load(f)
+
+        # Convert Python object to data frame
+        df = pd.DataFrame.from_records(data)
+
+        # Filter rows where column 'col_name' contains 0
+        mask = (df['Latitude'] == 0.0) | (df['Longitude'] == 0.0)
+        rows_to_drop = df[mask].index
+
+        # Drop the filtered rows from the DataFrame
+        df.drop(index=rows_to_drop, inplace=True)
+
+        return df
+    
+    # class variable df
+    df = create_df()
+
+    def haversine(lat1, lon1, lat2, lon2):
+        R = 6371 # Radius of the earth in km
+        dLat = math.radians(lat2 - lat1)
+        dLon = math.radians(lon2 - lon1)
+        a = math.sin(dLat/2) * math.sin(dLat/2) + \
+            math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * \
+            math.sin(dLon/2) * math.sin(dLon/2)
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+        d = R * c # Distance in km
+        return d
+
+    def geoLocation(self, address):
+        url = f"https://maps.googleapis.com/maps/api/geocode/json?address={address}&key={google_api_key}"
+        response = requests.get(url)
+        data = response.json()
+        location = data["results"][0]["geometry"]["location"]
+        return location
+    
+    def nearestClinic(self, geoName):
+        start_location_dict = self.geoLocation(geoName)
+        start_location = (start_location_dict['lat'], start_location_dict['lng'])
+        locations = []
+        for index, row in self.df.iterrows():
+            locations.append(row.tolist())
+        distances = []
+
+        for location in locations:
+            distance = self.haversine(start_location[0], start_location[1], \
+                                      location[2], location[3])
+            distances.append(distance)
+        index_of_closest_location = distances.index(min(distances))
+        end_location = str (locations[index_of_closest_location][1])
+        closest =  str ("Closest medical facility: "\
+                        +locations[index_of_closest_location][1]) + ", " \
+                        + str(round(distances[index_of_closest_location],2)) + "km away."
+        # print(closest)
+        mode="driving"
+        directions_result = gmaps.directions(start_location, end_location, mode="driving")
+    
+        guide = "Step by step guidance: " + "\n"
+        for step in directions_result[0]['legs'][0]['steps']:
+            instructions = step['html_instructions']
+            instructions = re.sub("<.*?>", "", instructions)
+            guide += instructions + "\n"
+        # print(guide)
+        route = {closest + "\n" + guide}
+        return route
