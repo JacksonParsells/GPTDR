@@ -108,7 +108,7 @@ class GPTDR:
         return df
     
 
-    def haversine(lat1, lon1, lat2, lon2):
+    def haversine(self, lat1, lon1, lat2, lon2):
         R = 6371 # Radius of the earth in km
         dLat = math.radians(lat2 - lat1)
         dLon = math.radians(lon2 - lon1)
@@ -153,5 +153,5 @@ class GPTDR:
             instructions = re.sub("<.*?>", "", instructions)
             guide += instructions + "\n"
         # print(guide)
-        route = {closest + "\n" + guide}
+        route = (closest + "\n" + guide)
         return route
