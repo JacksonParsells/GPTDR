@@ -20,15 +20,17 @@ load_dotenv('.env')
 # init constants
 DEFAULTINTROTEXT = "Welcome to GPTDR! Thank you for providing initial \
                        information for the diagnosis. To continue on, please \
-                       answer a few more questions."
-CALLBACKMESSAGE = "Please describe your problem, including the area affected, \
-                        when the issue began, and any symptoms after the beep. \
-                        Hang up when you are finished.\
-                        We will send you a text message with follow up \
-                        questions. Once you answer those questions, we will \
-                        send you a diagnosis and recommendations via text. \
-                        Note that G P T D R is not a medical professional and \
-                        is not liable for any advice or information it provides."
+                       answer a few more questions. Format multiple choice responses as follows: \
+                        [answer 1], [answer 2], [answer 3], [answer 4]"
+# CALLBACKMESSAGE = "Please describe your problem, including the area affected, \
+#                         when the issue began, and any symptoms after the beep. \
+#                         Hang up when you are finished.\
+#                         We will send you a text message with follow up \
+#                         questions. Once you answer those questions, we will \
+#                         send you a diagnosis and recommendations via text. \
+#                         Note that G P T D R is not a medical professional and \
+#                         is not liable for any advice or information it provides."
+CALLBACKMESSAGE = "respond fool"
 GPTDRPHONENUMBER = '+18885143317'
 
 # init variables

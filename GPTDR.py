@@ -36,6 +36,14 @@ class GPTDR:
           Please format questions as a list with multiple choice options a. through d.\
           and limit the number of questions to 4."})
 
+        # give example multiple choice questions
+        self.messages.append({"role": "user", "content": "Multiple choice options should follow this format\
+            question 1: \
+                a. option 1 \
+                    b. option 2 \
+                        c. option 3 \
+                            d. option 4"})
+
         ans = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=self.messages
