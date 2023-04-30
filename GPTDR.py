@@ -9,14 +9,15 @@ import openai
 from dotenv import load_dotenv
 load_dotenv('.env')
 
-google_api_key = os.getenv("GOOGLE_API_KEY")
-gmaps = googlemaps.Client(key=google_api_key)
-
 
 class GPTDR:
-    def __init__(self, openai_api_key):
+    def __init__(self, openai_api_key, googlemaps_api_key):
         self.openai_instance = openai
         self.openai_instance.api_key = openai_api_key
+
+        self.googlemaps_api_key = googlemaps_api_key
+        self.gmaps = googlemaps.Client(key=googlemaps_api_key)
+
         self.num_runs = 0
         self.messages = [{"role": "system", "content": "You are a very smart doctor. You are working with\
          a patient who does not have access to a doctor they can see in person, and you are going to help \
@@ -25,6 +26,7 @@ class GPTDR:
                             unfortunately I'm unable to see a doctor in person, so you are going\
                             to need to help me diagnose my ailment as best you can."},
                          {"role": "assistant", "content": "What symptoms are you experiencing?"}]
+
         self.delivered_diagnosis = False
         self.location_pending = False
         self.df = self.create_df()
@@ -118,7 +120,7 @@ class GPTDR:
         return d
 
     def geoLocation(self, address):
-        url = f"https://maps.googleapis.com/maps/api/geocode/json?address={address}&key={google_api_key}"
+        url = f"https://maps.googleapis.com/maps/api/geocode/json?address={address}&key={self.googlemaps_api_key}"
         response = requests.get(url)
         data = response.json()
         location = data["results"][0]["geometry"]["location"]
@@ -144,7 +146,7 @@ class GPTDR:
             + str(round(distances[index_of_closest_location], 2)) + "km away."
         # print(closest)
         mode = "driving"
-        directions_result = gmaps.directions(
+        directions_result = self.gmaps.directions(
             start_location, end_location, mode="driving")
 
         guide = "Step by step guidance: " + "\n"
