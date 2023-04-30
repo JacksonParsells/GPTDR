@@ -51,14 +51,13 @@ def call():
     # create a new Twilio voice response object
     resp = VoiceResponse()
 
-    # # get the user's phone number
+    # reject initial call
+    resp.reject(reason='busy')
+
+    # get the user's phone number
     phone_number = request.values.get('From')
 
-    resp.say(' ')
-    time.sleep(1)  # necessary for call back to go through
-    resp.hangup()
-
-    # create call
+    # call the user's phone number
     call = client.calls.create(
         to=phone_number,  # the user's phone number
         from_=GPTDRPHONENUMBER,  # your Twilio phone number
@@ -71,7 +70,6 @@ def call():
 
 @ app.route('/record/<phone_number>', methods=['GET', 'POST'])
 def record(phone_number):
-    print(phone_number)
     # create a new Twilio voice response object
     resp = VoiceResponse()
 
