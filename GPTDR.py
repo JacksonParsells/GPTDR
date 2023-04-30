@@ -71,8 +71,8 @@ class GPTDR:
                 {"role": "user", "content": user_input + "What followup \
                  questions do you have to figure out what the issue is? \
                  Remember that I don't have ready access to a doctor right now. \
-                 Please format questions as a list with multiple choice options a. through d.\
-                 and limit the number of questions to 4."})
+                 Please format questions as a list with 4 example answers that can be given by selecting \
+                 one of options a. through d. and limit the number of questions to 4."})
 
         ans = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
