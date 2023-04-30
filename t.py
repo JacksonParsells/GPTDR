@@ -29,7 +29,7 @@ CALLBACKMESSAGE = "Please describe your problem, including the area affected, \
                         send you a diagnosis and recommendations via text. \
                         Note that G P T D R is not a medical professional and \
                         is not liable for any advice or information it provides."
-# CALLBACKMESSAGE = "Symptoms now"z
+# CALLBACKMESSAGE = "Symptoms now"
 TESTSUBCRIBEDNUMBER = '+13025841779'
 GPTDRPHONENUMBER = '+18885143317'
 
@@ -52,26 +52,13 @@ def call():
     # create a new Twilio voice response object
     resp = VoiceResponse()
 
-    # get the user's phone number
-    user_phone_number = request.values.get('From')
+    # # get the user's phone number
+    phone_number = request.values.get('From')
 
-    # ask the user to press any key to continue, call the connect function with
-    # the user's phone number as a parameter
-    gather = Gather(num_digits=1,
-                    action=request.url_root + 'connect/' + user_phone_number,
-                    method='POST')
-    gather.say("press 1 for return call")
-    resp.append(gather)
+    resp.say(' ')
+    resp.hangup()
 
-    # return the Twilio voice response to the user
-    return str(resp)
-
-
-@app.route('/connect/<phone_number>', methods=['GET', 'POST'])
-def connect(phone_number):
-    # create a new Twilio voice response object
-    resp = VoiceResponse()
-
+    # create call
     call = client.calls.create(
         to=phone_number,  # the user's phone number
         from_=GPTDRPHONENUMBER,  # your Twilio phone number
