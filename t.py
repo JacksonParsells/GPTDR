@@ -29,8 +29,6 @@ CALLBACKMESSAGE = "Please describe your problem, including the area affected, \
                         send you a diagnosis and recommendations via text. \
                         Note that G P T D R is not a medical professional and \
                         is not liable for any advice or information it provides."
-# CALLBACKMESSAGE = "Symptoms now"
-TESTSUBCRIBEDNUMBER = '+13025841779'
 GPTDRPHONENUMBER = '+18885143317'
 
 # init variables
@@ -40,7 +38,8 @@ account_sid = os.getenv(sid)
 auth_token = os.getenv(key)
 client = Client(account_sid, auth_token)
 openai_api_key = os.getenv("OPENAI_API_KEY")
-gpt_dr = GPTDR.GPTDR(openai_api_key)
+googlemaps_api_key = os.getenv("GOOGLEMAPS_API_KEY")
+gpt_dr = GPTDR.GPTDR(openai_api_key, googlemaps_api_key)
 
 """
 phase 1 - user call and initial message
@@ -56,6 +55,7 @@ def call():
     phone_number = request.values.get('From')
 
     resp.say(' ')
+    time.sleep(1)  # necessary for call back to go through
     resp.hangup()
 
     # create call
@@ -69,8 +69,9 @@ def call():
     return str(resp)
 
 
-@app.route('/record/<phone_number>', methods=['GET', 'POST'])
+@ app.route('/record/<phone_number>', methods=['GET', 'POST'])
 def record(phone_number):
+    print(phone_number)
     # create a new Twilio voice response object
     resp = VoiceResponse()
 
@@ -88,7 +89,7 @@ def record(phone_number):
     return str(resp)
 
 
-@app.route('/process/<phone_number>', methods=['GET', 'POST'])
+@ app.route('/process/<phone_number>', methods=['GET', 'POST'])
 def process(phone_number):
     # create a new Twilio voice response object
     resp = VoiceResponse()
@@ -127,7 +128,7 @@ def send_initial_text(phone_number, user_response):
     return str(message)
 
 
-@app.route('/sms', methods=['GET', 'POST'])
+@ app.route('/sms', methods=['GET', 'POST'])
 def sms():
     # resp = MessagingResponse()
     resp = ""
