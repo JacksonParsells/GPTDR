@@ -22,15 +22,15 @@ DEFAULTINTROTEXT = "Welcome to GPTDR! Thank you for providing initial \
                        information for the diagnosis. To continue on, please \
                        answer a few more questions. Format multiple choice responses as follows: \
                         [answer 1], [answer 2], [answer 3], [answer 4]"
-# CALLBACKMESSAGE = "Please describe your problem, including the area affected, \
-#                         when the issue began, and any symptoms after the beep. \
-#                         Hang up when you are finished.\
-#                         We will send you a text message with follow up \
-#                         questions. Once you answer those questions, we will \
-#                         send you a diagnosis and recommendations via text. \
-#                         Note that G P T D R is not a medical professional and \
-#                         is not liable for any advice or information it provides."
-CALLBACKMESSAGE = "respond fool"
+CALLBACKMESSAGE = "Please describe your problem, including the area affected, \
+                        when the issue began, and any symptoms after the beep. \
+                        Hang up when you are finished.\
+                        We will send you a text message with follow up \
+                        questions. Once you answer those questions, we will \
+                        send you a diagnosis and recommendations via text. \
+                        Note that G P T D R is not a medical professional and \
+                        is not liable for any advice or information it provides."
+# CALLBACKMESSAGE = "respond fool"
 GPTDRPHONENUMBER = '+18885143317'
 
 # init variables
@@ -116,7 +116,7 @@ phase 2 - user text and follow up questions
 
 
 def send_initial_text(phone_number, user_response):
-    GPTDRresponse = gpt_dr.create_initial_text(user_response)
+    GPTDRresponse = DEFAULTINTROTEXT + gpt_dr.create_initial_text(user_response)
 
     # create a new Twilio voice response object
     message = client.messages.create(
@@ -145,10 +145,8 @@ def sms():
         # add the follow-up question to the Twilio messaging response object
         if not gpt_dr.delivered_diagnosis:
             resp += follow_up_question
-
         else:
-
-            resp = follow_up_question
+            resp += follow_up_question
             resp += " Would you like to see the nearest local medical facility? Respond yes or no."
 
     elif gpt_dr.location_pending:
@@ -161,6 +159,7 @@ def sms():
         else:
             resp += "It looks like you either said no or entered a command I don't recognize. Bye!"
 
+    print("curling with ", resp)
     account_creds = '-u ' + account_sid + ':' + auth_token
     os.system("curl 'https://api.twilio.com/2010-04-01/Accounts/AC51cd81e721fd58f313cfcc3738677592/Messages.json' -X POST \
     --data-urlencode 'To=" + user_number + "' \
